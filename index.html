@@ -363,26 +363,17 @@
                 metalness: 0.0
             });
             
-            // Create front cover (slightly open for peek inside)
-            const frontCoverGroup = new THREE.Group();
+            // Create front cover (closed position)
             const frontGeometry = new THREE.BoxGeometry(bookWidth, bookHeight, 0.05);
             const front = new THREE.Mesh(frontGeometry, frontMaterial);
-            front.position.x = bookWidth / 2; // Move to right edge for rotation
+            front.position.z = bookDepth / 2;
             front.castShadow = true;
-            frontCoverGroup.add(front);
+            bookGroup.add(front);
             
-            // Position the group at the spine edge
-            frontCoverGroup.position.x = -bookWidth / 2;
-            
-            // Open the front cover slightly (15 degrees)
-            frontCoverGroup.rotation.y = -0.26; // About 15 degrees
-            
-            bookGroup.add(frontCoverGroup);
-            
-            // Create spine (positioned on the left edge of the book)
+            // Create spine (positioned on the left edge)
             const spineGeometry = new THREE.BoxGeometry(0.05, bookHeight, bookDepth);
             const spine = new THREE.Mesh(spineGeometry, spineMaterial);
-            spine.position.x = -bookWidth / 2; // Position on left edge
+            spine.position.x = -bookWidth / 2;
             spine.castShadow = true;
             bookGroup.add(spine);
             
@@ -393,20 +384,19 @@
             back.castShadow = true;
             bookGroup.add(back);
             
-            // Create pages (slightly smaller than cover)
+            // Create main page block
             const pagesGeometry = new THREE.BoxGeometry(bookWidth - 0.05, bookHeight - 0.05, bookDepth - 0.1);
             const pages = new THREE.Mesh(pagesGeometry, pagesMaterial);
             pages.castShadow = true;
             bookGroup.add(pages);
             
-            // Add realistic page edge lines (simulating individual pages)
+            // Add realistic page edge lines
             const pageLinesMaterial = new THREE.LineBasicMaterial({ 
                 color: 0xe8dcc0,
                 transparent: true,
                 opacity: 0.6
             });
             
-            // Create horizontal lines on the right edge to simulate stacked pages
             const numPages = 25;
             for (let i = 0; i < numPages; i++) {
                 const y = (i / numPages) * (bookHeight - 0.1) - (bookHeight - 0.1) / 2;
@@ -422,51 +412,30 @@
                 bookGroup.add(line);
             }
             
-            // Add slight yellowing effect to page edges
+            // Add page edges
             const edgeMaterial = new THREE.MeshStandardMaterial({
                 color: 0xf5e6d3,
                 roughness: 0.95,
                 metalness: 0.0
             });
             
-            // Top edge of pages (slightly yellowed)
             const topEdgeGeometry = new THREE.BoxGeometry(bookWidth - 0.05, 0.02, bookDepth - 0.1);
             const topEdge = new THREE.Mesh(topEdgeGeometry, edgeMaterial);
             topEdge.position.y = (bookHeight - 0.05) / 2;
             bookGroup.add(topEdge);
             
-            // Bottom edge of pages
             const bottomEdge = new THREE.Mesh(topEdgeGeometry, edgeMaterial);
             bottomEdge.position.y = -(bookHeight - 0.05) / 2;
             bookGroup.add(bottomEdge);
             
-            // Right edge of pages (the visible side)
             const rightEdgeGeometry = new THREE.BoxGeometry(0.02, bookHeight - 0.05, bookDepth - 0.1);
             const rightEdge = new THREE.Mesh(rightEdgeGeometry, edgeMaterial);
             rightEdge.position.x = (bookWidth - 0.05) / 2;
             bookGroup.add(rightEdge);
             
-            // Add some visible inner pages for the "peek inside" effect
-            const innerPageMaterial = new THREE.MeshStandardMaterial({
-                color: 0xfffff0,
-                roughness: 0.85,
-                metalness: 0.0,
-                side: THREE.DoubleSide
-            });
-            
-            // Create a few visible pages near the front
-            for (let i = 0; i < 5; i++) {
-                const pageGeometry = new THREE.BoxGeometry(bookWidth - 0.1, bookHeight - 0.1, 0.008);
-                const page = new THREE.Mesh(pageGeometry, innerPageMaterial);
-                page.position.x = -bookWidth / 2 + 0.05 + (i * 0.015);
-                page.position.z = bookDepth / 2 - 0.1 - (i * 0.02);
-                page.rotation.y = -0.22 + (i * 0.04); // Slight fan effect
-                bookGroup.add(page);
-            }
-            
-            // Initial rotation to show the open book and spine
-            bookGroup.rotation.y = 0.6;
-            bookGroup.rotation.x = 0.15;
+            // Initial rotation - slight angle to show depth
+            bookGroup.rotation.y = 0.3;
+            bookGroup.rotation.x = 0.1;
             
             scene.add(bookGroup);
             
