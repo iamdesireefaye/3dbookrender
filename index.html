@@ -44,29 +44,10 @@
       z-index: 10;
       white-space: nowrap;
     }
-
-    .badge {
-      position: absolute;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #d4af37;
-      color: #1a4d2e;
-      padding: 8px 18px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
-      z-index: 10;
-      white-space: nowrap;
-    }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
-  <div class="badge">AMAZON #1 NEW RELEASE</div>
   <div class="instructions">Drag to rotate • Scroll to zoom</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -74,9 +55,9 @@
     // =========================
     // YOUR WIXSTATIC IMAGE URLS (unique)
     // =========================
-    const DEFAULT_FRONT_URL = "https://static.wixstatic.com/media/013f79_4778a342d3a04563bfae1cb95d962f83~mv2.png?v=2";
-    const DEFAULT_SPINE_URL = "https://static.wixstatic.com/media/013f79_8c03f9c79a534927b9e9e7f6005b78c3~mv2.png?v=2";
-    const DEFAULT_BACK_URL  = "https://static.wixstatic.com/media/013f79_115d84eed47d46e48c068319883fb662~mv2.png?v=2";
+    const DEFAULT_FRONT_URL = "https://static.wixstatic.com/media/013f79_4778a342d3a04563bfae1cb95d962f83~mv2.png?v=3";
+    const DEFAULT_SPINE_URL = "https://static.wixstatic.com/media/013f79_8c03f9c79a534927b9e9e7f6005b78c3~mv2.png?v=3";
+    const DEFAULT_BACK_URL  = "https://static.wixstatic.com/media/013f79_115d84eed47d46e48c068319883fb662~mv2.png?v=3";
 
     let scene, camera, renderer, bookGroup;
 
@@ -126,7 +107,7 @@
           textures.spine.anisotropy = maxAniso;
           textures.back.anisotropy  = maxAniso;
 
-          // Make colors correct
+          // Correct color space
           textures.front.colorSpace = THREE.SRGBColorSpace;
           textures.spine.colorSpace = THREE.SRGBColorSpace;
           textures.back.colorSpace  = THREE.SRGBColorSpace;
