@@ -9,7 +9,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: transparent; /* important for transparent embed */
+      background: transparent;
       font-family: 'Montserrat', sans-serif;
     }
 
@@ -17,13 +17,13 @@
       width: 100vw;
       height: 100vh;
       position: relative;
-      background: transparent; /* important */
+      background: transparent;
     }
 
     canvas {
       display: block;
       cursor: grab;
-      background: transparent; /* important */
+      background: transparent;
     }
 
     canvas:active { cursor: grabbing; }
@@ -72,12 +72,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     // =========================
-    // DEFAULT IMAGE URLS (Wixstatic)
-    // NOTE: you provided the same URL for all three. Replace spine/back if you have separate images.
+    // YOUR WIXSTATIC IMAGE URLS (unique)
     // =========================
-    const DEFAULT_FRONT_URL = "https://static.wixstatic.com/media/013f79_4778a342d3a04563bfae1cb95d962f83~mv2.png?v=1";
-    const DEFAULT_SPINE_URL = "https://static.wixstatic.com/media/013f79_4778a342d3a04563bfae1cb95d962f83~mv2.png?v=1";
-    const DEFAULT_BACK_URL  = "https://static.wixstatic.com/media/013f79_4778a342d3a04563bfae1cb95d962f83~mv2.png?v=1";
+    const DEFAULT_FRONT_URL = "https://static.wixstatic.com/media/013f79_4778a342d3a04563bfae1cb95d962f83~mv2.png?v=2";
+    const DEFAULT_SPINE_URL = "https://static.wixstatic.com/media/013f79_8c03f9c79a534927b9e9e7f6005b78c3~mv2.png?v=2";
+    const DEFAULT_BACK_URL  = "https://static.wixstatic.com/media/013f79_115d84eed47d46e48c068319883fb662~mv2.png?v=2";
 
     let scene, camera, renderer, bookGroup;
 
@@ -85,7 +84,6 @@
     initScene(DEFAULT_FRONT_URL, DEFAULT_SPINE_URL, DEFAULT_BACK_URL);
 
     function initScene(frontImage, spineImage, backImage) {
-      // Scene setup (transparent background)
       scene = new THREE.Scene();
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -94,7 +92,7 @@
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      renderer.setClearColor(0x000000, 0); // fully transparent
+      renderer.setClearColor(0x000000, 0); // transparent
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -113,7 +111,7 @@
       rimLight.position.set(-5, 5, -5);
       scene.add(rimLight);
 
-      // Texture loader
+      // Textures
       const textureLoader = new THREE.TextureLoader();
       textureLoader.setCrossOrigin('anonymous');
 
@@ -123,11 +121,15 @@
       function onLoaded() {
         loadedCount++;
         if (loadedCount === 3) {
-          // Improve clarity when rotating
           const maxAniso = renderer.capabilities.getMaxAnisotropy();
           textures.front.anisotropy = maxAniso;
           textures.spine.anisotropy = maxAniso;
           textures.back.anisotropy  = maxAniso;
+
+          // Make colors correct
+          textures.front.colorSpace = THREE.SRGBColorSpace;
+          textures.spine.colorSpace = THREE.SRGBColorSpace;
+          textures.back.colorSpace  = THREE.SRGBColorSpace;
 
           buildBook(textures.front, textures.spine, textures.back);
         }
@@ -135,6 +137,7 @@
 
       function onError(which, url) {
         console.error(`Failed to load ${which} texture:`, url);
+        alert(`Could not load ${which} image.\n\nCheck that the URL opens directly as an image:\n${url}`);
       }
 
       textures.front = textureLoader.load(frontImage, onLoaded, undefined, () => onError('front', frontImage));
@@ -143,7 +146,6 @@
     }
 
     function buildBook(frontTexture, spineTexture, backTexture) {
-      // Create book group
       bookGroup = new THREE.Group();
 
       // Book dimensions
@@ -183,7 +185,7 @@
       front.castShadow = true;
       bookGroup.add(front);
 
-      // Spine (left edge)
+      // Spine
       const spineGeometry = new THREE.BoxGeometry(0.05, bookHeight, bookDepth);
       const spine = new THREE.Mesh(spineGeometry, spineMaterial);
       spine.position.x = -bookWidth / 2;
@@ -246,7 +248,7 @@
       rightEdge.position.x = (bookWidth - 0.05) / 2;
       bookGroup.add(rightEdge);
 
-      // Initial rotation
+      // Initial angle
       bookGroup.rotation.y = 0.3;
       bookGroup.rotation.x = 0.1;
       scene.add(bookGroup);
