@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Book Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f5f1e8;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 77, 46, 0.9);
+            color: #d4af37;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .badge {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #d4af37;
+            color: #1a4d2e;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="badge">AMAZON #1 NEW RELEASE</div>
+    <div class="instructions">👆 Drag to rotate • Scroll to zoom</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f1e8);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 8);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+        
+        const rimLight = new THREE.DirectionalLight(0xd4af37, 0.3);
+        rimLight.position.set(-5, 5, -5);
+        scene.add(rimLight);
+        
+        // Load book cover texture
+        const textureLoader = new THREE.TextureLoader();
+        const bookTexture = textureLoader.load('book-cover.png');
+        
+        // Create book group
+        const bookGroup = new THREE.Group();
+        
+        // Book dimensions (standard paperback proportions)
+        const bookWidth = 2.5;
+        const bookHeight = 3.5;
+        const bookDepth = 0.4;
+        
+        // Materials
+        const coverMaterial = new THREE.MeshStandardMaterial({
+            map: bookTexture,
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        
+        const spineMaterial = new THREE.MeshStandardMaterial({
+            color: 0x1a4d2e,
+            roughness: 0.5,
+            metalness: 0.1
+        });
+        
+        const pagesMaterial = new THREE.MeshStandardMaterial({
+            color: 0xf5f1e8,
+            roughness: 0.8,
+            metalness: 0.0
+        });
+        
+        const backMaterial = new THREE.MeshStandardMaterial({
+            color: 0x1a4d2e,
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        
+        // Create book cover (front)
+        const coverGeometry = new THREE.BoxGeometry(bookWidth, bookHeight, 0.05);
+        const cover = new THREE.Mesh(coverGeometry, coverMaterial);
+        cover.position.z = bookDepth / 2;
+        cover.castShadow = true;
+        bookGroup.add(cover);
+        
+        // Create spine
+        const spineGeometry = new THREE.BoxGeometry(bookDepth, bookHeight, 0.05);
+        const spine = new THREE.Mesh(spineGeometry, spineMaterial);
+        spine.rotation.y = Math.PI / 2;
+        spine.castShadow = true;
+        bookGroup.add(spine);
+        
+        // Create back cover
+        const backGeometry = new THREE.BoxGeometry(bookWidth, bookHeight, 0.05);
+        const back = new THREE.Mesh(backGeometry, backMaterial);
+        back.position.z = -bookDepth / 2;
+        back.castShadow = true;
+        bookGroup.add(back);
+        
+        // Create pages (slightly smaller than cover)
+        const pagesGeometry = new THREE.BoxGeometry(bookWidth - 0.05, bookHeight - 0.05, bookDepth - 0.1);
+        const pages = new THREE.Mesh(pagesGeometry, pagesMaterial);
+        pages.castShadow = true;
+        bookGroup.add(pages);
+        
+        // Initial rotation for better view
+        bookGroup.rotation.y = -0.3;
+        bookGroup.rotation.x = 0.1;
+        
+        scene.add(bookGroup);
+        
+        // Mouse interaction
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotationVelocity = { x: 0, y: 0 };
+        
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                
+                rotationVelocity.y = deltaX * 0.01;
+                rotationVelocity.x = deltaY * 0.01;
+                
+                bookGroup.rotation.y += rotationVelocity.y;
+                bookGroup.rotation.x += rotationVelocity.x;
+                
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        renderer.domElement.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+        
+        // Touch support for mobile
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            previousMousePosition = { 
+                x: e.touches[0].clientX, 
+                y: e.touches[0].clientY 
+            };
+        });
+        
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                const deltaX = e.touches[0].clientX - previousMousePosition.x;
+                const deltaY = e.touches[0].clientY - previousMousePosition.y;
+                
+                rotationVelocity.y = deltaX * 0.01;
+                rotationVelocity.x = deltaY * 0.01;
+                
+                bookGroup.rotation.y += rotationVelocity.y;
+                bookGroup.rotation.x += rotationVelocity.x;
+                
+                previousMousePosition = { 
+                    x: e.touches[0].clientX, 
+                    y: e.touches[0].clientY 
+                };
+            }
+        });
+        
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+        
+        // Zoom with mouse wheel
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            camera.position.z += e.deltaY * 0.01;
+            camera.position.z = Math.max(4, Math.min(12, camera.position.z));
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Gentle auto-rotation when not dragging
+            if (!isDragging) {
+                bookGroup.rotation.y += 0.002;
+                
+                // Damping for smooth stop
+                rotationVelocity.x *= 0.95;
+                rotationVelocity.y *= 0.95;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
