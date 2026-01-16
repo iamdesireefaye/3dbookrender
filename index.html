@@ -98,7 +98,7 @@
         }
         
         .upload-section {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
         
         .upload-section h3 {
@@ -193,7 +193,7 @@
     <div class="upload-overlay" id="uploadOverlay">
         <div class="upload-box">
             <h2>📚 Create Your 3D Book</h2>
-            <p>Upload images for the front and back covers to see your book in interactive 3D</p>
+            <p>Upload images for the front cover, spine, and back cover</p>
             
             <div class="upload-section">
                 <h3>Front Cover</h3>
@@ -204,6 +204,17 @@
                     </label>
                 </div>
                 <div class="status-text" id="frontStatus"></div>
+            </div>
+            
+            <div class="upload-section">
+                <h3>Spine</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="spineInput" accept="image/*">
+                    <label for="spineInput" class="file-input-button" id="spineButton">
+                        Choose Spine Image
+                    </label>
+                </div>
+                <div class="status-text" id="spineStatus"></div>
             </div>
             
             <div class="upload-section">
@@ -225,6 +236,7 @@
     <script>
         let scene, camera, renderer, bookGroup;
         let frontImageData = null;
+        let spineImageData = null;
         let backImageData = null;
         
         // Front cover input handler
@@ -236,7 +248,22 @@
                     frontImageData = event.target.result;
                     document.getElementById('frontButton').classList.add('selected');
                     document.getElementById('frontStatus').textContent = '✓ Front cover loaded';
-                    checkBothImagesLoaded();
+                    checkAllImagesLoaded();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Spine input handler
+        document.getElementById('spineInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    spineImageData = event.target.result;
+                    document.getElementById('spineButton').classList.add('selected');
+                    document.getElementById('spineStatus').textContent = '✓ Spine loaded';
+                    checkAllImagesLoaded();
                 };
                 reader.readAsDataURL(file);
             }
@@ -251,15 +278,15 @@
                     backImageData = event.target.result;
                     document.getElementById('backButton').classList.add('selected');
                     document.getElementById('backStatus').textContent = '✓ Back cover loaded';
-                    checkBothImagesLoaded();
+                    checkAllImagesLoaded();
                 };
                 reader.readAsDataURL(file);
             }
         });
         
-        // Check if both images are loaded
-        function checkBothImagesLoaded() {
-            if (frontImageData && backImageData) {
+        // Check if all images are loaded
+        function checkAllImagesLoaded() {
+            if (frontImageData && spineImageData && backImageData) {
                 document.getElementById('startButton').disabled = false;
             }
         }
@@ -267,10 +294,10 @@
         // Start button handler
         document.getElementById('startButton').addEventListener('click', function() {
             document.getElementById('uploadOverlay').classList.add('hidden');
-            initScene(frontImageData, backImageData);
+            initScene(frontImageData, spineImageData, backImageData);
         });
         
-        function initScene(frontImage, backImage) {
+        function initScene(frontImage, spineImage, backImage) {
             // Scene setup
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xf5f1e8);
@@ -300,6 +327,7 @@
             // Load textures
             const textureLoader = new THREE.TextureLoader();
             const frontTexture = textureLoader.load(frontImage);
+            const spineTexture = textureLoader.load(spineImage);
             const backTexture = textureLoader.load(backImage);
             
             // Create book group
@@ -308,7 +336,7 @@
             // Book dimensions
             const bookWidth = 2.5;
             const bookHeight = 3.5;
-            const bookDepth = 0.4;
+            const bookDepth = 0.5;
             
             // Materials
             const frontMaterial = new THREE.MeshStandardMaterial({
@@ -317,15 +345,15 @@
                 metalness: 0.1
             });
             
-            const backMaterial = new THREE.MeshStandardMaterial({
-                map: backTexture,
-                roughness: 0.4,
+            const spineMaterial = new THREE.MeshStandardMaterial({
+                map: spineTexture,
+                roughness: 0.5,
                 metalness: 0.1
             });
             
-            const spineMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a4d2e,
-                roughness: 0.5,
+            const backMaterial = new THREE.MeshStandardMaterial({
+                map: backTexture,
+                roughness: 0.4,
                 metalness: 0.1
             });
             
@@ -342,7 +370,7 @@
             front.castShadow = true;
             bookGroup.add(front);
             
-            // Create spine
+            // Create spine (rotated to show custom image)
             const spineGeometry = new THREE.BoxGeometry(bookDepth, bookHeight, 0.05);
             const spine = new THREE.Mesh(spineGeometry, spineMaterial);
             spine.rotation.y = Math.PI / 2;
@@ -356,14 +384,14 @@
             back.castShadow = true;
             bookGroup.add(back);
             
-            // Create pages
+            // Create pages (slightly smaller than cover)
             const pagesGeometry = new THREE.BoxGeometry(bookWidth - 0.05, bookHeight - 0.05, bookDepth - 0.1);
             const pages = new THREE.Mesh(pagesGeometry, pagesMaterial);
             pages.castShadow = true;
             bookGroup.add(pages);
             
-            // Initial rotation
-            bookGroup.rotation.y = -0.3;
+            // Initial rotation to show spine better
+            bookGroup.rotation.y = -0.5;
             bookGroup.rotation.x = 0.1;
             
             scene.add(bookGroup);
